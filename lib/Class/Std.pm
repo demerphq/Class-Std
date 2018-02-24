@@ -560,7 +560,15 @@ sub AUTOLOAD {
         my ($invocant, $method_name) = @_;
 
         if ( defined $invocant ) {
-            if (my $sub_ref = $real_can->(@_)) {
+            if ((my $sub_ref = $real_can->(@_))
+                || $method_name=~/^[()]/
+                # overload special methods all start with an open paren which
+                # we must avoid, or we risk infinite loops if Carp calls $obj->can("((")
+                # see: https://rt.perl.org/Ticket/Display.html?id=132902
+                # Note, we do a charclass with open AND close in it to avoid confusing syntax
+                # highlighters and editors -- it should be harmless, normal code shouldn't
+                # be creating methods with oddball names like this.
+            ) {
                 return $sub_ref;
             }
 
